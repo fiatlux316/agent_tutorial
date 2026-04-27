@@ -39,3 +39,4 @@
  - [예스24](https://www.yes24.com/product/goods/186921504)
  - [교보문고](https://product.kyobobook.co.kr/detail/S000219725405)
  - [알라딘](https://www.aladin.co.kr/shop/wproduct.aspx?ItemId=390789073)
+ - [쿠팡](https://www.coupang.com/vp/products/9496816934?itemId=28289151545)
