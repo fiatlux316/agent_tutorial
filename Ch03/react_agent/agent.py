@@ -8,14 +8,15 @@ from dotenv import load_dotenv
 
 # LangChain 1.0 계열 임포트
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-#from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_community.vectorstores import Chroma
 from langchain_core.tools import create_retriever_tool
 from langchain_core.prompts import PromptTemplate
+from langchain_aws import ChatBedrock
 
-from llm_manager import LLMManager
-#from vs_manager import VectorStoreManager
+from contextlib import redirect_stdout
+import io
+
 from embedding_adapter_chroma import E5ChromaEmbeddings
 
 # 환경 변수 로드 (.env 파일에서 API 키 등을 로드)
@@ -138,8 +139,24 @@ def _render_prompt(user_input: str, scratchpad: str) -> str:
         agent_scratchpad=scratchpad,
     )
 
-#llm = ChatOpenAI(model="gpt-4.1", temperature=0)
-llm = LLMManager(provider=os.getenv("LLM_MODEL"))
+top_k_env = os.getenv("BEDROCK_TOP_K")
+model_kwargs = {}
+if top_k_env:
+    try:
+        model_kwargs["top_k"] = int(top_k_env)
+    except ValueError:
+        print("환경변수 BEDROCK_TOP_K는 정수여야 합니다. 무시합니다.")
+
+#if model_kwargs:
+
+llm = ChatBedrock(
+    model=os.getenv("BEDROCK_MODEL"),
+    region=os.getenv("BEDROCK_REGION"),
+    temperature=0.0,
+    top_p=0.1,
+    max_tokens=8000,
+    model_kwargs=model_kwargs
+)
 
 
 # =========================
@@ -186,8 +203,8 @@ def run_react(user_input: str, max_iters: int = 8) -> Dict[str, str]:
     scratchpad = ""
     for _ in range(max_iters):
         rendered = _render_prompt(user_input, scratchpad)
-        #resp = llm.invoke(rendered, stop=STOP_SEQ)
-        resp = llm.generate_response(None, rendered)
+        resp = llm.invoke(rendered, stop=STOP_SEQ)
+        #resp = llm.generate_response(None, rendered)
         text = resp.content if hasattr(resp, "content") else str(resp)
 
         tool, action_input = _parse_action_and_input(text)
@@ -217,3 +234,44 @@ def run_react(user_input: str, max_iters: int = 8) -> Dict[str, str]:
         "log": scratchpad,
     }
 
+
+class ConversationManager:
+    def __init__(self):
+        self.chat_history = []     # [(user_text, assistant_text), ...] 내부 보관은 유지
+        self.execution_logs = []
+
+    def process_message(self, message: str):
+        self.execution_logs = []
+        try:
+            context_str = ""
+            if self.chat_history:
+                context_str = "이전 대화 내용:\n"
+                for i, (q, a) in enumerate(self.chat_history):
+                    context_str += f"질문 {i+1}: {q}\n답변 {i+1}: {a}\n"
+                context_str += "\n위 대화 맥락을 고려해서 다음 질문에 답변해주세요.\n\n"
+
+            full_message = context_str + message
+
+            f = io.StringIO()
+            with redirect_stdout(f):
+                result = run_react(full_message, max_iters=10)
+                response = result["output"]
+                exec_log = result.get("log", "")
+
+            execution_log = f.getvalue() + "\n" + exec_log
+            self.execution_logs.append(execution_log)
+
+            # 내부 기록은 기존대로 유지
+            self.chat_history.append((message, response))
+            return response, execution_log
+        except Exception as e:
+            error_message = f"오류가 발생했습니다: {str(e)}"
+            self.chat_history.append((message, error_message))
+            return error_message, f"실행 중 오류: {str(e)}"
+
+    def clear_history(self):
+        self.chat_history = []
+        self.execution_logs = []
+        return []
+
+conversation_manager = ConversationManager()

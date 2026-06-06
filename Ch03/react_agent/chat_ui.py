@@ -1,49 +1,8 @@
 # ==== Gradio 4.x: Chatbot은 messages 형식을 기대 ====
 import gradio as gr
-from contextlib import redirect_stdout
-import io
-from react_agent import run_react
+from agent import conversation_manager
 
-class ConversationManager:
-    def __init__(self):
-        self.chat_history = []     # [(user_text, assistant_text), ...] 내부 보관은 유지
-        self.execution_logs = []
 
-    def process_message(self, message: str):
-        self.execution_logs = []
-        try:
-            context_str = ""
-            if self.chat_history:
-                context_str = "이전 대화 내용:\n"
-                for i, (q, a) in enumerate(self.chat_history):
-                    context_str += f"질문 {i+1}: {q}\n답변 {i+1}: {a}\n"
-                context_str += "\n위 대화 맥락을 고려해서 다음 질문에 답변해주세요.\n\n"
-
-            full_message = context_str + message
-
-            f = io.StringIO()
-            with redirect_stdout(f):
-                result = run_react(full_message, max_iters=10)
-                response = result["output"]
-                exec_log = result.get("log", "")
-
-            execution_log = f.getvalue() + "\n" + exec_log
-            self.execution_logs.append(execution_log)
-
-            # 내부 기록은 기존대로 유지
-            self.chat_history.append((message, response))
-            return response, execution_log
-        except Exception as e:
-            error_message = f"오류가 발생했습니다: {str(e)}"
-            self.chat_history.append((message, error_message))
-            return error_message, f"실행 중 오류: {str(e)}"
-
-    def clear_history(self):
-        self.chat_history = []
-        self.execution_logs = []
-        return []
-
-conversation_manager = ConversationManager()
 
 def chat_with_agent(message, history):
     try:

@@ -28,7 +28,9 @@ class E5ChromaEmbeddings:
             # 리스트 형태
             embeddings = []
             for text in input:
+                print(f"Embedding text: {text[:30]}...")  # 임베딩할 텍스트 일부 출력
                 embedding = self.embedder.embed_query(text)
+                print(f"Embedding vector (first 5 values): {embedding[:5]}")  # 임베딩 벡터 일부 출력
                 embeddings.append(embedding.tolist())
             return embeddings
         else:
@@ -36,4 +38,8 @@ class E5ChromaEmbeddings:
 
     def embed_documents(self, input):
         """ChromaDB가 요구하는 embed_documents 메소드"""
+        return self.__call__(input)
+    
+    def embed_query(self, input):
+        """ChromaDB가 요구하는 embed_query 메소드"""
         return self.__call__(input)
