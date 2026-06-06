@@ -1,0 +1,23 @@
+[project]
+name = "agent-tutorial"
+version = "0.1.0"
+description = "ReAct 에이전트 예제"
+requires-python = ">=3.13"
+dependencies = [
+    "langchain-ollama>=1.1.0",
+    "langchain>=1.0.0",
+    "langchain-core>=1.2.29",
+    "langchain-google-genai==4.2.4",
+    "langchain-aws==1.5.0",
+    "python-dotenv",
+    "langchain-community>=0.3.0",
+    "langchain-text-splitters>=0.2.0",
+    "tiktoken>=0.7.0",
+    "chromadb>=0.5.5",
+    "pymupdf>=1.24.0", 
+    "gradio>=4.44.0", 
+    "requests>=2.31.0",
+    "boto3==1.42.89",
+    "google-generativeai==0.8.6",
+    "openai==2.32.0"
+]
