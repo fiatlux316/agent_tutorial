@@ -7,12 +7,11 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 from langgraph.prebuilt import tools_condition
 from langchain_core.messages import ToolMessage
+from langgraph.checkpoint.memory import MemorySaver
+
+memory = MemorySaver()
 
 import json
-import os
-
-from dotenv import load_dotenv
-load_dotenv()
 
 tool = TavilySearch(max_results=2)
 tools = [tool]
@@ -21,13 +20,8 @@ tools = [tool]
 result = tool.invoke("랭그래프에서 '노드'란 무엇인가요?")
 #print(f"\n🔍 도구 응답:\n{result}")
 
-#llm = init_chat_model("openai:gpt-4.1")
-#llm = init_chat_model(f"{os.getenv('BEDROCK_MODEL')}")
-
-llm = init_chat_model(
-    model=f"google_genai:{os.getenv('GEMINI_MODEL')}",
-    api_key=os.getenv('GEMINI_API_KEY'),
-)
+from llm import get_llm
+llm = get_llm()
 
 llm_with_tools = llm.bind_tools(tools)
 
@@ -106,14 +100,31 @@ graph_builder.add_edge("tools", "chatbot")
 graph_builder.add_edge(START, "chatbot")
 
 # 그래프 완성 및 컴파일
-graph = graph_builder.compile()
+#graph = graph_builder.compile()
+graph = graph_builder.compile(checkpointer=memory)
 
+config = {"configurable": {"thread_id": "1"}}
+
+
+# 테스트용 사용자 입력과 그래프 실행 ########
+user_input = "안녕하세요! 제 이름은 랭체인입니다."
+events = graph.stream(
+    {"messages": [{"role": "user", "content": user_input}]},
+    config,
+    stream_mode="values"
+)
+for event in events:
+    event["messages"][-1].pretty_print()
+######################################
 
 def stream_graph_updates(user_input: str):
-    for event in graph.stream({"messages": [{"role": "user", "content": user_input}]}):
-        for value in event.values():
-            print("Assistant:", value["messages"][-1].content)
-
+    events = graph.stream(
+        {"messages": [{"role": "user", "content": user_input}]},
+        config,
+        stream_mode="values"
+    )
+    for event in events:
+        print("Assistant:", event["messages"][-1].content)
 
 while True:
     user_input = input("User: ")
@@ -121,4 +132,4 @@ while True:
         print("Goodbye!")
         break
 
-    stream_graph_updates(user_input)            
+    stream_graph_updates(user_input)
