@@ -8,6 +8,7 @@ load_dotenv()
 llm = None
 
 def get_llm():
+    
     global llm
     if llm is None:
         if os.getenv("LLM_MODEL") == "gemini":
@@ -15,7 +16,7 @@ def get_llm():
                 model=f"google_genai:{os.getenv('GEMINI_MODEL')}",
                 api_key=os.getenv('GEMINI_API_KEY'),
             )
-        elif os.getenv("LLM_MODEL") == "sonnet":
+        elif os.getenv("LLM_MODEL") == "claude":
             llm = init_chat_model(
                 model=f"bedrock:{os.getenv('BEDROCK_MODEL')}",
                 region_name=os.getenv('BEDROCK_REGION', 'ap-southeast-2'),
