@@ -2,7 +2,7 @@ from crewai import Crew, Process
 from agents import blog_agent
 from tasks import write_blog_task, save_task
 
-
+# 기본 crew
 blog_crew = Crew(
     agents=[blog_agent],
     tasks=[write_blog_task, save_task],
