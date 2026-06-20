@@ -1,6 +1,11 @@
 from crewai_tools import RagTool, SerperDevTool
 from embedding_adapter_chroma import E5ChromaEmbeddings
 
+from typing import Type
+from pydantic import BaseModel, Field
+from crewai.tools import BaseTool
+from crewai.tools import tool
+
 # 로컬 E5 임베딩 어댑터 인스턴스 생성
 custom_embeddings = E5ChromaEmbeddings()
 
@@ -21,13 +26,12 @@ config = {
     }
 }
 
-# 1) SerperDevTool 정의 (웹 검색 전용 도구)
+# 1) 웹 검색 전용 도구 : SerperDevTool
 serper_tool = SerperDevTool(
     n_results=5,  # 상위 5개 결과만 사용
 )
 
-
-# 1) RAG 도구 생성 (기본 설정)
+# 2) RAG 도구 생성 : RagTool
 rag_tool = RagTool(
     name="MyDocsRAG",
     description="내 문서를 기반으로 질문에 답하는 RAG 툴",
@@ -49,4 +53,34 @@ rag_tool.add(
 )
 
 
+# 3) Custom Tool
+# 3-1) 입력 스키마 정의 (Pydantic 기반)
+class CurrencyInput(BaseModel):
+    amount: float = Field(..., description="변환할 금액(숫자)")
+    rate: float = Field(..., description="적용할 환율(예: 1325.5)")
+
+# 3-2) BaseTool 상속하여 사용자 정의 도구 만들기
+class CurrencyConverterTool(BaseTool):
+    name: str = "환율 변환 도구"
+    description: str = "주어진 금액을 환율에 따라 변환하여 반환합니다."
+    args_schema: Type[BaseModel] = CurrencyInput
+
+    def _run(self, amount: float, rate: float) -> str:
+        """실행 로직"""
+        result = amount * rate
+        return f"{result:,.2f} 원"
+    
+currency_converter_tool = CurrencyConverterTool()
+#print(currency_converter_tool.run(amount=100, rate=1325.5))
+
+
+# 3-3) tool 데코레이터를 사용해 간단하게 사용자 정의 도구 만들기
+@tool("환율 변환 도구")
+def currency_converter(amount: float, rate: float) -> str:
+    """주어진 금액(amount)에 환율(rate)을 적용하여 원화(KRW) 금액을 계산합니다."""
+    result = amount * rate
+    return f"{result:,.2f} 원"
+
+# 실행 테스트
+#print(currency_converter.run(amount=100, rate=1325.5))
 

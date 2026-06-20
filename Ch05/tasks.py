@@ -1,7 +1,7 @@
 from crewai import Agent, Task
 from pydantic import BaseModel
 
-from agents import blog_agent, analyst, writer, real_estate_researcher, report_writer
+from agents import blog_agent, analyst, writer, real_estate_researcher, report_writer, knowledge_agent
 from tools import serper_tool
 
 # 블로그 출력 구조 정의(Pydantic) → Task 결과 형식 강제
@@ -108,3 +108,13 @@ analysis_task = Task(
     verbose=True,
 )
 
+
+# 4) Q&A 태스크 정의
+knowledge_task = Task(
+    description=(
+        "KB 주택시장 리뷰 문서를 기반으로 다음 질문에 답하라:\n"
+        "{question}"
+    ),
+    expected_output="질문에 대한 구체적이고 간단한 한국어 답변.",
+    agent=knowledge_agent,
+)

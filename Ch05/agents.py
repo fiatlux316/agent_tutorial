@@ -1,8 +1,13 @@
 from crewai import Agent
 from tools import serper_tool
 from llm import get_llm
-
 llm = get_llm()
+
+from crewai.knowledge.knowledge_config import KnowledgeConfig
+
+
+
+
 
 # 블로그 콘텐츠 생성 에이전트
 blog_agent = Agent(
@@ -63,5 +68,18 @@ report_writer = Agent(
     goal="수집된 정보를 바탕으로 이해하기 쉬운 한국어 시장 전망 리포트를 작성한다.",
     backstory="경제/부동산 관련 리포트를 다수 작성해 온 분석가이다.",
     verbose=True,
+    llm=llm
+)
+
+# knowledge config를 적용한 Agent 
+knowledge_config = KnowledgeConfig(
+    results_limit=10,     # 최대 10개의 문서/청크만 활용
+    score_threshold=0.5   # 관련성 점수 0.5 이상만 사용
+)
+knowledge_agent = Agent(
+    role="리서치 에이전트",
+    goal="관련 문서를 기반으로 요약을 제공한다.",
+    backstory="문서를 잘 읽고 핵심만 정리하는 분석가이다.",
+    knowledge_config=knowledge_config,
     llm=llm
 )
