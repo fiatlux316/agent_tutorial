@@ -1,5 +1,3 @@
-# RAG Tool
-
 from crewai_tools import RagTool, SerperDevTool
 from embedding_adapter_chroma import E5ChromaEmbeddings
 
@@ -49,14 +47,6 @@ rag_tool.add(
     data_type="website",
     url="https://www.kbfg.com/kbresearch/report/reportList.do",
 )
-
-# # 3) 질문하기
-# question = "서울 및 수도권 아파트 시장"
-# answer = rag_tool.run(question)
-
-# print("Q:", question)
-# print("A:", answer)
-
 
 
 

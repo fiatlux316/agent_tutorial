@@ -2,7 +2,7 @@ from crewai import Crew, Process
 from dotenv import load_dotenv
 load_dotenv()
 
-from agents import blog_agent, analyst, writer, real_estate_researcher, report_writer, gemini_llm
+from agents import blog_agent, analyst, writer, real_estate_researcher, report_writer, llm
 from tasks import write_blog_task, save_task, analyze_task, write_task, search_task, analysis_task
 
 # blog_crew = Crew(
@@ -18,7 +18,7 @@ from tasks import write_blog_task, save_task, analyze_task, write_task, search_t
 #     tasks=[analyze_task, write_task],
 #     process=Process.sequential,
 #     planning=True,
-#     planning_llm=gemini_llm,
+#     planning_llm=llm,
 #     verbose=True
 # )
 # result = ai_trend_crew.kickoff(

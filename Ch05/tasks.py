@@ -1,5 +1,3 @@
-
-
 from crewai import Agent, Task
 from pydantic import BaseModel
 

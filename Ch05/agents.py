@@ -1,19 +1,8 @@
-
-
-
-import os
-from crewai import Agent, LLM
-from dotenv import load_dotenv
+from crewai import Agent
 from tools import serper_tool
+from llm import get_llm
 
-# .env 파일 로드
-load_dotenv()
-
-# Gemini LLM 설정
-gemini_llm = LLM(
-    model="gemini/gemini-2.5-flash",
-    api_key=os.environ.get("GEMINI_API_KEY")
-)
+llm = get_llm()
 
 # 블로그 콘텐츠 생성 에이전트
 blog_agent = Agent(
@@ -30,7 +19,7 @@ blog_agent = Agent(
         "항상 '독자가 이 글에서 무엇을 얻어 가는가?'를 기준으로 내용을 구성합니다."
     ),
     verbose=True,
-    llm=gemini_llm
+    llm=llm
 )
 
 # 데이터 분석가 Agent
@@ -39,7 +28,7 @@ analyst = Agent(
     goal="수집된 정보를 기반으로 핵심 인사이트를 도출합니다.",
     backstory="복잡한 데이터에서도 패턴과 의미를 찾아내는 능력이 탁월합니다.",
     verbose=True,
-    llm=gemini_llm
+    llm=llm
 )
 
 # 보고서 작성가 Agent
@@ -48,8 +37,8 @@ writer = Agent(
     goal="전체 분석 내용을 하나의 구조화된 문서로 작성합니다.",
     backstory="명확하고 간결한 표현으로 정보를 전달하는 데 강점을 지닙니다.",
     verbose=True,
-    llm=gemini_llm
-)
+    llm=llm
+)   
 
 
 #  웹에서 자료를 찾는 리서치 에이전트
@@ -65,7 +54,7 @@ real_estate_researcher = Agent(
     ),
     tools=[serper_tool],  # ✅ SerperDevTool 연결
     verbose=True,
-    llm=gemini_llm
+    llm=llm
 )
 
 #  리포트 형태로 정리하는 에이전트
@@ -74,5 +63,5 @@ report_writer = Agent(
     goal="수집된 정보를 바탕으로 이해하기 쉬운 한국어 시장 전망 리포트를 작성한다.",
     backstory="경제/부동산 관련 리포트를 다수 작성해 온 분석가이다.",
     verbose=True,
-    llm=gemini_llm
+    llm=llm
 )
