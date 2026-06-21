@@ -20,4 +20,5 @@ result = knowledge_crew.kickoff(
 )
 
 print("=== Crew Result ===")
-print(result.raw) # 크루 단위 통합 결과(원문)
+# 크루 단위 통합 결과(원문)
+print(result.raw)   

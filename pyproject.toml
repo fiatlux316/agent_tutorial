@@ -25,6 +25,9 @@ dependencies = [
     "onnx>=1.22.0",
 ]
 
+[tool.pyrefly]
+project-includes = []
+
 [dependency-groups]
 dev = [
     "ipykernel>=7.2.0",

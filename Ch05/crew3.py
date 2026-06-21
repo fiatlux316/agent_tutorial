@@ -13,4 +13,5 @@ result = real_estate_crew.kickoff(
     inputs={"question": "2026년 한국 부동산 시장 전망은 어때?"}
 )
 print("=== Crew Result ===")
-print(result.raw) # 크루 단위 통합 결과(원문)
+# 크루 단위 통합 결과(원문)
+print(result.raw) 

@@ -13,10 +13,13 @@ result = blog_crew.kickoff(inputs={"topic": "에이전트"})
 
 
 print("=== Crew Result ===")
-print(result.raw) # 크루 단위 통합 결과(원문)
+# 크루 단위 통합 결과(원문)
+print(result.raw) 
 
 print("\n=== Blog Generation Output (Pydantic) ===")
-print(write_blog_task.output.pydantic.model_dump())   # 블로그 원문(검증된 스키마)
+# 블로그 원문(검증된 스키마)
+print(write_blog_task.output.pydantic.model_dump())   
 
 print("\n=== Summary Output (Markdown) ===")
-print(save_task.output.raw)                  # 요약본 마크다운 결과
+# 요약본 마크다운 결과
+print(save_task.output.raw)          
