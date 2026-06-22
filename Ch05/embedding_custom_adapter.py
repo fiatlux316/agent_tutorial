@@ -6,7 +6,7 @@ from crewai.rag.core.types import Documents, Embeddings
 from embedding_model import E5QEmbeddings
 
 
-class E5ChromaEmbeddings(CustomEmbeddingFunction):
+class E5Embeddings(CustomEmbeddingFunction):
     """CrewAI의 CustomEmbeddingFunction을 상속한 E5 임베딩 래퍼"""
     
     def __init__(self):
@@ -14,7 +14,7 @@ class E5ChromaEmbeddings(CustomEmbeddingFunction):
 
     @staticmethod
     def name() -> str:
-        return "E5ChromaEmbeddings"
+        return "E5Embeddings"
             
     def __call__(self, input: Documents) -> Embeddings:
         """

@@ -3,7 +3,7 @@ from agents import knowledge_agent
 from tasks import knowledge_task
 from crewai.knowledge.source.pdf_knowledge_source import PDFKnowledgeSource
 from crewai.rag.embeddings.providers.custom.custom_provider import CustomProvider
-from embedding_adapter_custom import E5ChromaEmbeddings
+from embedding_custom_adapter import E5Embeddings
 
 # knowledge base 기반 crew
 # 로컬 E5 임베딩 모델 사용
@@ -15,7 +15,7 @@ knowledge_crew = Crew(
     agents=[knowledge_agent],
     tasks=[knowledge_task],
     knowledge_sources=[pdf_source],
-    embedder=CustomProvider(embedding_callable=E5ChromaEmbeddings),
+    embedder=CustomProvider(embedding_callable=E5Embeddings),
     process=Process.sequential,
 )
 result = knowledge_crew.kickoff(

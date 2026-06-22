@@ -1,6 +1,6 @@
 from crewai_tools import RagTool, SerperDevTool
 #from embedding_adapter_chroma import E5ChromaEmbeddings
-from embedding_adapter_custom import E5ChromaEmbeddings
+from embedding_custom_adapter import E5Embeddings
 
 from typing import Type
 from pydantic import BaseModel, Field
@@ -8,7 +8,7 @@ from crewai.tools import BaseTool
 from crewai.tools import tool
 
 # 로컬 E5 임베딩 어댑터 인스턴스 생성
-custom_embeddings = E5ChromaEmbeddings()
+custom_embeddings = E5Embeddings()
 
 # config 
 config = {
