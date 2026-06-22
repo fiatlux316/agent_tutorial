@@ -2,17 +2,20 @@ from crewai import Crew, Process
 from agents import knowledge_agent
 from tasks import knowledge_task
 from crewai.knowledge.source.pdf_knowledge_source import PDFKnowledgeSource
+from crewai.rag.embeddings.providers.custom.custom_provider import CustomProvider
+from embedding_adapter_custom import E5ChromaEmbeddings
 
 # knowledge base 기반 crew
-# 로컬 임베딩 함수를 어떻게 설정할 것인가 ?
+# 로컬 E5 임베딩 모델 사용
 pdf_source = PDFKnowledgeSource(
-    file_paths=["./knowledge/KB주택시장리뷰_2026년 1월호.pdf", 
-                "./knowledge/KB주택시장리뷰_2025년 12월호.pdf"]
+    file_paths=["KB주택시장리뷰_2026년 1월호.pdf", 
+                "KB주택시장리뷰_2025년 12월호.pdf"]
 )
 knowledge_crew = Crew(
     agents=[knowledge_agent],
     tasks=[knowledge_task],
     knowledge_sources=[pdf_source],
+    embedder=CustomProvider(embedding_callable=E5ChromaEmbeddings),
     process=Process.sequential,
 )
 result = knowledge_crew.kickoff(

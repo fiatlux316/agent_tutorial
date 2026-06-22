@@ -2,7 +2,7 @@ from crewai import Agent, Task
 from pydantic import BaseModel
 
 from agents import blog_agent, analyst, writer, real_estate_researcher, report_writer, knowledge_agent
-from tools import serper_tool
+from tools import serper_tool, rag_tool
 
 # 블로그 출력 구조 정의(Pydantic) → Task 결과 형식 강제
 class Blog(BaseModel):
@@ -80,6 +80,27 @@ search_task = Task(
     ),
     agent=real_estate_researcher,
     tools=[serper_tool],
+    verbose=True,
+)
+
+# 3-2) RAG에서 정보 수집
+rag_search_task = Task(
+    description=(
+        "다음 질문에 대해 RAG를 사용해 웹을 검색하고, "
+        "관련성이 높은 기사와 리포트를 찾아 요약하라.\n"
+        "질문: {question}\n\n"
+        "요구사항:\n"
+        "1) 최근 1~2년 내 기사/보고서를 우선적으로 참고한다.\n"
+        "2) 서로 다른 출처(언론사, 리포트)를 최소 2개 이상 포함한다.\n"
+    ),
+    expected_output=(
+        "다음 형식의 요약 노트를 작성한다.\n\n"
+        "1. 참고한 주요 기사/리포트 목록 (제목 · 출처 · URL)\n"
+        "2. 기사/리포트에서 공통적으로 언급하는 핵심 키워드 3~5개\n"
+        "3. 각 키워드에 대한 한두 문장 요약"
+    ),
+    agent=real_estate_researcher,
+    tools=[rag_tool],
     verbose=True,
 )
 

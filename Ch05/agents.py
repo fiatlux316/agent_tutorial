@@ -1,12 +1,9 @@
 from crewai import Agent
-from tools import serper_tool
+from tools import serper_tool, rag_tool
 from llm import get_llm
 llm = get_llm()
 
 from crewai.knowledge.knowledge_config import KnowledgeConfig
-
-
-
 
 
 # 블로그 콘텐츠 생성 에이전트
@@ -46,7 +43,8 @@ writer = Agent(
 )   
 
 
-#  웹에서 자료를 찾는 리서치 에이전트
+# 웹또는 RAG에서 자료를 찾는 리서치 에이전트
+# tool 은  Task 레벨에서 설정됨 
 real_estate_researcher = Agent(
     role="부동산 리서치 에이전트",
     goal=(
@@ -57,7 +55,8 @@ real_estate_researcher = Agent(
         "각종 뉴스, 리포트, 칼럼을 분석해 요약해 온 "
         "온라인 리서치 전문가이다."
     ),
-    tools=[serper_tool],  # ✅ SerperDevTool 연결
+    #tools=[serper_tool],  # ✅ SerperDevTool 연결
+    #tools=[rag_tool], 
     verbose=True,
     llm=llm
 )

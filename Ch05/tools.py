@@ -1,5 +1,6 @@
 from crewai_tools import RagTool, SerperDevTool
-from embedding_adapter_chroma import E5ChromaEmbeddings
+#from embedding_adapter_chroma import E5ChromaEmbeddings
+from embedding_adapter_custom import E5ChromaEmbeddings
 
 from typing import Type
 from pydantic import BaseModel, Field
