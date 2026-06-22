@@ -1,3 +1,5 @@
+# Basic 모델 (단일 Agent)
+
 from crewai import Crew, Process
 from agents import blog_agent
 from tasks import write_blog_task, save_task

@@ -1,3 +1,6 @@
+# 멀티 Agent 적용 Crew
+# 계획 모드 적용
+
 from crewai import Crew, Process
 from agents import llm, analyst, writer
 from tasks import analyze_task, write_task

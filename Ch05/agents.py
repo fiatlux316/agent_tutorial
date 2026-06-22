@@ -80,5 +80,7 @@ knowledge_agent = Agent(
     goal="관련 문서를 기반으로 요약을 제공한다.",
     backstory="문서를 잘 읽고 핵심만 정리하는 분석가이다.",
     knowledge_config=knowledge_config,
+    reasoning=True,
+    max_reasoning_attempts=3,
     llm=llm
 )

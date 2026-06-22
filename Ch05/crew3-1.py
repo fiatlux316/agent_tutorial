@@ -1,12 +1,13 @@
+# 외부 검색 툴 적용 Crew
+
 from crewai import Crew, Process
 from agents import real_estate_researcher, report_writer
-from tasks import search_task, rag_search_task, analysis_task
+from tasks import search_task, analysis_task
 
 # 외부 tool 활용 (검색 또는 RAG)
 real_estate_crew = Crew(
     agents=[real_estate_researcher, report_writer],
     tasks=[search_task, analysis_task],
-    #tasks=[rag_search_task, analysis_task], 
     process=Process.sequential,  # 검색 → 분석 순차 실행
     verbose=True,
 )
