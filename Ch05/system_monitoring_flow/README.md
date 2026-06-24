@@ -21,12 +21,12 @@ crewai install
 
 ### Customizing
 
-**Add your `OPENAI_API_KEY` into the `.env` file**
+**Add your `DEVX_MODEL`, `DEVX_API_URL`, `DEVX_API_KEY`, `LLM_TYPE`, `DEVX_TEMPERATURE` into the `.env` file**
 
-- Modify `src/guide_creator_flow/config/agents.yaml` to define your agents
-- Modify `src/guide_creator_flow/config/tasks.yaml` to define your tasks
-- Modify `src/guide_creator_flow/crew.py` to add your own logic, tools and specific args
-- Modify `src/guide_creator_flow/main.py` to add custom inputs for your agents and tasks
+- Modify `src/system_monitoring_flow/config/agents.yaml` to define your agents
+- Modify `src/system_monitoring_flow/config/tasks.yaml` to define your tasks
+- Modify `src/system_monitoring_flow/crew.py` to add your own logic, tools and specific args
+- Modify `src/system_monitoring_flow/main.py` to add custom inputs for your agents and tasks
 
 ## Running the Project
 
@@ -36,13 +36,13 @@ To kickstart your flow and begin execution, run this from the root folder of you
 crewai run
 ```
 
-This command initializes the guide_creator_flow Flow as defined in your configuration.
+This command initializes the system_monitoring_flow Flow as defined in your configuration.
 
-This example, unmodified, will run a content creation flow on AI Agents and save the output to `output/post.md`.
+This example, unmodified, will run a system monitoring flow on AI Agents and save the output to `output/post.md`.
 
 ## Understanding Your Crew
 
-The guide_creator_flow Crew is composed of multiple AI agents, each with unique roles, goals, and tools. These agents collaborate on a series of tasks, defined in `config/tasks.yaml`, leveraging their collective skills to achieve complex objectives. The `config/agents.yaml` file outlines the capabilities and configurations of each agent in your crew.
+The system_monitoring_flow Flow is composed of multiple AI agents, each with unique roles, goals, and tools. These agents collaborate on a series of tasks, defined in `config/tasks.yaml`, leveraging their collective skills to achieve complex objectives. The `config/agents.yaml` file outlines the capabilities and configurations of each agent in your crew.
 
 ## Support
 
