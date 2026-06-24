@@ -1,0 +1,38 @@
+health_check_task:
+  description: >
+    다음 항목들을 점검하여 시스템의 현재 상태를 수집하세요:
+    1. 프론트엔드 웹 헬스체크 ({target_url})
+    2. Datadog에서 '{target_service}' 서비스의 500 에러 확인
+    3. EKS에서 '{target_service}' 관련 Pod 상태 확인
+    4. 메인 DB ('prod-payment-db')의 리소스 가용량 확인
+
+  expected_output: >
+    각 시스템 컴포넌트의 현재 상태 지표와 이상 여부가 정리된 요약 목록
+
+  tools: [check_datadog_500_errors, check_frontweb_health, check_eks_pod_status, check_db_resource_capacity]
+  agent: monitoring_engineer
+
+log_analysis_task:
+  description: >
+    상태 점검 결과를 바탕으로, 문제가 의심되는 '{target_service}'의 최근 로그 이상 징후를 분석하세요.
+    단순 에러 메시지뿐만 아니라, 발생 빈도와 스택트레이스의 핵심 원인을 요약해야 합니다.
+
+  expected_output: >
+    에러 로그 스택트레이스 요약 및 주요 이상 징후 패턴 분석 결과
+
+  tools: [analyze_log_anomalies]
+  agent: log_analyst
+
+incident_report_task:
+  description: >
+    수집된 인프라 지표와 로그 분석 결과를 바탕으로 공식 인시던트 리포트를 작성하세요.
+    포함되어야 할 내용:
+    - 장애 심각도 (Severity) 평가
+    - 장애 현상 요약
+    - 근본 원인(RCA) 추정
+    - 시스템 복구를 위한 즉각적인 Action Item (엔지니어 지시용)
+    
+  expected_output: >
+    마크다운 포맷의 체계적인 장애 진단 및 대응 가이드 리포트
+    
+  agent: incident_commander
