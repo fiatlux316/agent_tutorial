@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from pathlib import Path
 from pydantic import BaseModel
-from crewai.flow import Flow, listen, start
+from crewai.flow import Flow, listen, start, and_, or_, router
 from system_monitoring_flow.crews.monitoring_crew.crew import MonitoringCrew
 
 
@@ -26,7 +26,7 @@ class MonitoringFlow(Flow[ContentState]):
         print(f"Topic: {self.state.topic}")
 
     @listen(start)
-    def analysis(self):
+    def analysis_crew(self):
         print(f"analysis on topic: {self.state.topic}")
         result = (
             MonitoringCrew()
@@ -39,14 +39,39 @@ class MonitoringFlow(Flow[ContentState]):
         print("장애영향분석 결과 출력")
         self.state.final_post = result.raw
 
-    @listen(analysis)
+    @router(analysis_crew)
+    def next_step(self, result):
+        # 필요시 로직 분기 처리 (코드개선 or 튜닝)
+        if True:
+            return "coding_crew"
+        return "tuning_crew"
+
+    @listen(next_step)
+    def coding_crew(self):
+        print(f"coding on topic: {self.state.topic}")
+        result = "코드개선결과"
+
+        print("코드개선 결과 출력")
+        # to-do : 필요시 로직 구현
+        #self.state.final_post = result
+
+    @listen(next_step)
+    def tuning_crew(self):
+        print(f"tuning on topic: {self.state.topic}")
+        result = "성능튜닝결과"
+
+        print("성능튜닝 결과 출력")
+        # to-do : 필요시 로직 구현
+        #self.state.final_post = result
+
+    @listen(and_(coding_crew, tuning_crew))
     def reporting(self):
-        print("장애영향분석 결과 저장")
+        print("결과 취합 및 저장")
         output_dir = Path("output")
         output_dir.mkdir(exist_ok=True)
         with open(output_dir / "post.md", "w") as f:
             f.write(self.state.final_post)
-        print("장애영향분석 결과 저장 완료")
+        print("결과 저장 완료")
 
 
 def kickoff():
