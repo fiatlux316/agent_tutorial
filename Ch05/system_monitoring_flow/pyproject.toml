@@ -5,6 +5,7 @@ description = "system_monitoring_flow using crewAI"
 authors = [{ name = "Your Name", email = "you@example.com" }]
 requires-python = ">=3.10"
 dependencies = [
+    "agentops>=0.4.21",
     "crewai[bedrock,tools]==1.14.7",
     "langchain==1.2.15",
 ]

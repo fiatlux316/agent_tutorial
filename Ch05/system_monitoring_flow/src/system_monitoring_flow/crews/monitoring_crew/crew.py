@@ -10,11 +10,17 @@ from system_monitoring_flow.tools.custom_tool import (
     analyze_log_anomalies as _analyze_log_anomalies,
 )
 
+from dotenv import load_dotenv
+load_dotenv()
+
+import agentops
+# 2. AgentOps 초기화 (반드시 CrewAI 컴포넌트 생성 전에 호출)
+# tags 인자를 넣으면 대시보드에서 프로젝트를 분류해서 보기 편합니다.
+agentops.init(tags=['system-monitoring-flow'])
 
 # bedrock api 호출 
 import os
-from dotenv import load_dotenv
-load_dotenv()
+
 from crewai import LLM
 top_k_env = os.getenv("BEDROCK_TOP_K", "5")
 model_kwargs = {}
