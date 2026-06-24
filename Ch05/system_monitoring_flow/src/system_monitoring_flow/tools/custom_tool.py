@@ -9,7 +9,6 @@ def check_datadog_500_errors(service_name: str) -> str:
     - service_name: 조회할 대상 서비스의 영문 이름 (예: 'payment-gateway', 'auth-service')
     """
     # TODO: datadog_api_client 연동 로직 추가
-    service_name = "payment-gateway"
     return f"[{service_name}] Datadog Alert: 최근 15분간 500 에러 42건 발생. 급증 추세 (임계치 초과)."
 
 @tool
