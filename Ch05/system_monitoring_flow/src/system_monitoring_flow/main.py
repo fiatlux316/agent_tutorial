@@ -14,8 +14,8 @@ class ContentState(BaseModel):
 class MonitoringFlow(Flow[ContentState]):
 
     @start()    
-    def plan_content(self, crewai_trigger_payload: dict = None):
-        print("Planning content")
+    def start(self, crewai_trigger_payload: dict = None):
+        print("flow start")
 
         if crewai_trigger_payload:
             self.state.topic = crewai_trigger_payload.get("topic", "장애영향분석")
@@ -25,9 +25,9 @@ class MonitoringFlow(Flow[ContentState]):
 
         print(f"Topic: {self.state.topic}")
 
-    @listen(plan_content)
-    def generate_content(self):
-        print(f"Generating content on: {self.state.topic}")
+    @listen(start)
+    def analysis(self):
+        print(f"analysis on topic: {self.state.topic}")
         result = (
             MonitoringCrew()
             .crew()
@@ -39,8 +39,8 @@ class MonitoringFlow(Flow[ContentState]):
         print("장애영향분석 결과 출력")
         self.state.final_post = result.raw
 
-    @listen(generate_content)
-    def save_content(self):
+    @listen(analysis)
+    def reporting(self):
         print("장애영향분석 결과 저장")
         output_dir = Path("output")
         output_dir.mkdir(exist_ok=True)
