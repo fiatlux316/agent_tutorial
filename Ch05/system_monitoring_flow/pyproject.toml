@@ -3,7 +3,7 @@ name = "system_monitoring_flow"
 version = "0.1.0"
 description = "system_monitoring_flow using crewAI"
 authors = [{ name = "Your Name", email = "you@example.com" }]
-requires-python = ">=3.13"
+requires-python = ">=3.10"
 dependencies = [
     "crewai[bedrock,tools]==1.14.7",
     "langchain==1.2.15",

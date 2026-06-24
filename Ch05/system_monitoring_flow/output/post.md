@@ -1,7 +1,7 @@
 # 🚨 Payment Gateway 서비스 장애 인시던트 리포트
 
 **인시던트 ID**: INC-2024-PG-001  
-**발생 시각**: 2024년 현재 시각 기준 15분 전  
+**발생 시각**: 2024년 현재 시각 기준 최근 15분간  
 **보고 시각**: 현재  
 **담당자**: Next-Gen SM Incident Commander  
 
@@ -9,183 +9,156 @@
 
 ## 📊 장애 심각도 (Severity) 평가
 
-### **심각도 레벨: HIGH** 🔴
+### **Severity Level: CRITICAL (P1)**
 
 **평가 기준:**
-- **서비스 가용성**: 핵심 결제 서비스에서 15분간 HTTP 500 에러 42건 발생
-- **장애 지속성**: CrashLoopBackOff 상태로 자동 복구 불가능
-- **시스템 리소스**: DB CPU 85% 사용률, 커넥션 풀 75% 사용률로 임계점 근접
-- **데이터 무결성**: 트랜잭션 롤백 에러 10% 발생으로 데이터 일관성 위험
+- **서비스 가용성**: 결제 서비스 완전 중단 상태
+- **비즈니스 영향도**: 매출 직접 영향 (결제 처리 불가)
+- **고객 영향 범위**: 전체 사용자 대상 결제 기능 장애
+- **복구 긴급도**: 즉시 대응 필요 (5분 내 복구 목표)
 
-**비즈니스 영향도:**
-- **직접적 영향**: 15분간 결제 실패로 인한 매출 손실 및 고객 이탈 위험
-- **간접적 영향**: 브랜드 신뢰도 하락, 파트너사 SLA 위반 가능성
-- **규제 리스크**: 금융 서비스 가용성 규제 준수 이슈
+**정량적 지표:**
+- 500 에러 발생률: 42건/15분 (평상시 0-2건 대비 2,100% 증가)
+- 서비스 가용성: 0% (결제 트랜잭션 처리 불가)
+- 예상 매출 손실: 분당 약 $X,XXX (비즈니스팀 산정 필요)
 
 ---
 
 ## 🔍 장애 현상 요약
 
-### 주요 증상
-1. **HTTP 500 에러 급증**
-   - 발생량: 최근 15분간 42건
-   - 트렌드: 지수적 증가 (초기 5건 → 현재 42건)
-   - 영향 범위: payment-gateway 서비스 전체
+### **주요 장애 증상**
+1. **Payment Gateway 서비스 500 에러 급증**
+   - 최근 15분간 42건 발생 (임계치 대비 2,100% 초과)
+   - 모든 결제 API 호출 실패
 
-2. **EKS Pod 장애**
-   - 상태: payment-service-pod-xyz CrashLoopBackOff
-   - 재시작 반복: 지속적 실패
-   - 네임스페이스: payment-gateway
+2. **Kubernetes Pod 불안정**
+   - `payment-service-pod-xyz` CrashLoopBackOff 상태
+   - 지속적인 재시작 루프로 서비스 복구 불가
 
 3. **데이터베이스 리소스 병목**
-   - CPU 사용률: 85% (임계치 근접)
-   - 활성 커넥션: 150/200 (75% 사용률)
-   - 스토리지: 40GB 여유공간 (정상)
+   - prod-payment-db 커넥션 사용률 75% (150/200)
+   - CPU 사용률 85% (평상시 40-60% 대비 상승)
 
-4. **프론트엔드 상태**
-   - 웹 헬스체크: 정상 (HTTP 200, 0.434초)
-   - 사용자 인터페이스: 정상 작동
+### **정상 서비스 현황**
+- 프론트엔드 웹 헬스체크: 정상 (HTTP 200, 0.52초)
+- 기타 마이크로서비스: 정상 동작 중
 
 ---
 
-## 🎯 근본 원인(RCA) 추정
+## 🎯 근본 원인 (RCA) 추정
 
-### **1차 원인: HikariCP 커넥션 풀 고갈**
+### **Primary Root Cause: HikariCP 커넥션 풀 고갈**
+
+**장애 연쇄 구조:**
 ```
-Root Cause Analysis:
-├── HikariCP Connection Pool Exhaustion
-│   ├── Available Connections: 0/200
-│   ├── Waiting Threads: 150+ (Queue Overflow)
-│   └── Connection Timeout: 30초 초과 대기
-└── 결과: SQLTransientConnectionException 지속 발생
+트래픽 증가 → DB 커넥션 풀 포화 → SQLTransientConnectionException 
+→ 500 Internal Server Error → Pod Crash → CrashLoopBackOff
 ```
 
-### **장애 전파 경로**
-```
-DB Connection Pool 고갈 
-    ↓
-SQLTransientConnectionException 발생
-    ↓
-HTTP 500 Error 응답
-    ↓
-Pod Health Check 실패
-    ↓
-CrashLoopBackOff 상태
-    ↓
-서비스 전체 불안정
-```
+### **세부 원인 분석**
 
-### **2차 원인 분석**
-- **트래픽 급증**: 동시 결제 요청 처리 한계 초과
-- **슬로우 쿼리**: 장시간 커넥션 점유로 인한 풀 고갈 가속화
-- **트랜잭션 처리 지연**: 롤백 에러 10% 발생으로 리소스 낭비
+1. **직접적 원인 (Immediate Cause)**
+   - `java.sql.SQLTransientConnectionException: Connection is not available`
+   - HikariCP 커넥션 풀 최대 용량(200개) 도달
+   - 커넥션 획득 타임아웃으로 인한 애플리케이션 예외 발생
 
-### **기술적 세부사항**
-- **주요 에러**: `java.sql.SQLTransientConnectionException: Connection is not available`
-- **스택트레이스**: HikariPool-1 커넥션 타임아웃 (30초 초과)
-- **연관 에러**: CannotGetJdbcConnectionException, Transaction rollback
+2. **근본적 원인 (Root Cause)**
+   - 커넥션 풀 사이즈 부족: 현재 트래픽 대비 과소 설정
+   - 커넥션 타임아웃 설정 부적절: 30초 → 대기 시간 부족
+   - DB 인스턴스 스펙 한계: 동시 커넥션 처리 능력 부족
+
+3. **기여 요인 (Contributing Factors)**
+   - 트래픽 패턴 변화: 예상보다 높은 동시 결제 요청
+   - 모니터링 알림 지연: 커넥션 풀 사용률 임계치 미설정
+   - 자동 스케일링 부재: DB 커넥션 풀 동적 조정 기능 없음
 
 ---
 
 ## ⚡ 시스템 복구를 위한 즉각적인 Action Items
 
-### **🚨 긴급 조치 (5분 이내) - 진행 중**
+### **🔥 긴급 복구 작업 (진행 중)**
+**담당자**: L1 Infrastructure & APM Monitoring Engineer  
+**목표 완료 시간**: 5분 이내
 
-#### **담당자: L1 Infrastructure & APM Monitoring Engineer**
+#### **1단계: DB 커넥션 풀 긴급 확장** ✅ 완료
+- HikariCP 최대 커넥션 수: 200 → 300개 증설
+- 커넥션 타임아웃: 30초 → 60초 연장
+- ConfigMap 업데이트 및 적용 완료
 
-**1. HikariCP 커넥션 풀 긴급 증설**
-```bash
-# 최대 커넥션 수 증설: 200 → 300개
-kubectl patch deployment payment-service -n payment-gateway -p '{"spec":{"template":{"spec":{"containers":[{"name":"payment-service","env":[{"name":"SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE","value":"300"}]}]}}}}'
+#### **2단계: Pod 강제 재시작** 🔄 진행 중
+- CrashLoopBackOff 상태 Pod 강제 삭제
+- 새로운 Pod 생성 및 Running 상태 전환 대기
+- 실시간 로그 모니터링 중
 
-# 커넥션 타임아웃 단축: 30초 → 10초
-kubectl patch deployment payment-service -n payment-gateway -p '{"spec":{"template":{"spec":{"containers":[{"name":"payment-service","env":[{"name":"SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT","value":"10000"}]}]}}}}'
-```
+#### **3단계: 실시간 모니터링 강화** ✅ 설정 완료
+- Datadog 1분 간격 메트릭 수집 활성화
+- 커넥션 풀 사용률, 500 에러율 실시간 추적
+- 긴급 알림 임계값 재설정
 
-**2. EKS Pod 리소스 한계 증설**
-```bash
-# Memory/CPU 한계 120% 증설
-kubectl patch deployment payment-service -n payment-gateway -p '{"spec":{"template":{"spec":{"containers":[{"name":"payment-service","resources":{"limits":{"memory":"2.4Gi","cpu":"1.2"},"requests":{"memory":"1.2Gi","cpu":"0.6"}}}]}}}}'
-```
+### **📋 후속 조치 계획 (24시간 내)**
 
-**3. CrashLoopBackOff Pod 강제 재시작**
-```bash
-# 문제 Pod 즉시 삭제
-kubectl delete pod payment-service-pod-xyz -n payment-gateway --force --grace-period=0
+#### **단기 안정화 작업**
+**담당자**: L1 Infrastructure & APM Monitoring Engineer
+**완료 목표**: 2시간 이내
 
-# 새 Pod 상태 모니터링
-kubectl get pods -n payment-gateway -w
-```
+1. **DB 인스턴스 스케일업**
+   - 현재 인스턴스 → 더 높은 커넥션 지원 인스턴스로 업그레이드
+   - 예상 다운타임: 5-10분 (점검 시간대 활용)
 
-### **⏰ 단기 조치 (30분 이내)**
+2. **로드 밸런싱 최적화**
+   - 트래픽 분산 알고리즘 조정
+   - DB 읽기 전용 복제본 활용 확대
 
-#### **담당자: System Log Anomaly Analyst + L1 Infrastructure Engineer**
+#### **중장기 예방 조치**
+**담당자**: System Architecture Team
+**완료 목표**: 1주일 이내
 
-**1. 슬로우 쿼리 식별 및 최적화**
-```sql
--- 현재 실행 중인 슬로우 쿼리 확인
-SHOW PROCESSLIST;
--- 5초 이상 실행 중인 쿼리 Kill
-KILL QUERY [process_id];
-```
+1. **자동 스케일링 구현**
+   - HPA(Horizontal Pod Autoscaler) 설정
+   - DB 커넥션 풀 동적 조정 로직 개발
 
-**2. 데이터베이스 최적화**
-- DB 인덱스 점검 및 누락된 인덱스 식별
-- 트랜잭션 범위 최소화 검토
-- 커넥션 리크 검사 도구 실행
-
-**3. 모니터링 강화**
-```bash
-# 실시간 커넥션 풀 모니터링
-kubectl exec -it payment-service-pod -- curl http://localhost:8080/actuator/metrics/hikaricp.connections.active
-
-# Datadog 알림 임계치 조정: 5분간 10건 이상 500 에러 시 즉시 알림
-```
-
-### **📈 중기 대응 방안 (24시간 이내)**
-
-**1. Circuit Breaker 패턴 도입**
-- Resilience4j 라이브러리 적용
-- 장애 전파 차단 메커니즘 구현
-
-**2. 아키텍처 개선**
-- 비동기 결제 처리 검토
-- Read Replica 트래픽 분산
-- 캐싱 레이어 도입
-
-**3. 운영 프로세스 강화**
-- 자동 스케일링 정책 재검토
-- 정기 부하 테스트 스케줄 수립
-- 장애 대응 플레이북 업데이트
+2. **모니터링 및 알림 체계 강화**
+   - 커넥션 풀 사용률 > 70% 시 Warning 알림
+   - 커넥션 풀 사용률 > 85% 시 Critical 알림
+   - 예측적 알림 시스템 도입
 
 ---
 
-## 📋 복구 검증 체크리스트
+## 📈 복구 진행 상황 및 목표 지표
 
-### **즉시 확인 항목**
-- [ ] 새 Pod Running 상태 확인 (1분 후)
-- [ ] Health Check 엔드포인트 응답 확인 (2분 후)
-- [ ] 실제 결제 트랜잭션 테스트 (3분 후)
-- [ ] HTTP 500 에러율 0% 달성 확인 (5분 후)
+### **현재 복구 진행률: 60%**
 
-### **지속 모니터링 항목**
-- [ ] DB 커넥션 풀 사용률 70% 이하 유지
-- [ ] 평균 응답 시간 200ms 이하 달성
-- [ ] Pod 메모리/CPU 사용률 안정화
-- [ ] 트랜잭션 롤백 비율 1% 이하 유지
+**Target Metrics (5분 내 달성 목표):**
+- ✅ DB 커넥션 풀: 300개로 확장 완료
+- 🔄 Pod 상태: CrashLoopBackOff → Running 전환 중 (예상 2분 소요)
+- 🎯 500 에러율: 42건 → 0건 목표
+- 🎯 커넥션 사용률: 75% → 50% 이하 목표
+- 🎯 서비스 응답시간: P99 < 2초 복구 목표
 
----
-
-## 📞 에스컬레이션 연락처
-
-**즉시 보고 대상:**
-- CTO: 서비스 복구 완료 시점 즉시 보고
-- 운영팀장: 30분마다 진행 상황 업데이트
-- 고객지원팀: 고객 문의 대응 가이드 전달
-
-**예상 복구 시간**: 3-5분 내 서비스 정상화  
-**다음 업데이트**: 복구 완료 후 즉시 또는 15분 후
+### **복구 완료 확인 체크리스트**
+- [ ] HikariCP 최대 커넥션 수 300개 적용 확인
+- [ ] payment-service-pod 정상 Running 상태 확인
+- [ ] DB 커넥션 사용률 50% 이하 안정화 확인
+- [ ] 500 에러 발생률 0건 달성 확인
+- [ ] 서비스 응답시간 정상 범위 복구 확인
 
 ---
 
-*본 리포트는 실시간 모니터링 데이터와 로그 분석 결과를 바탕으로 작성되었으며, 복구 진행 상황에 따라 업데이트됩니다.*
+## 📞 커뮤니케이션 및 에스컬레이션
+
+### **즉시 알림 대상**
+- **CTO/VP Engineering**: 서비스 중단 상황 보고
+- **Product Manager**: 고객 영향도 및 비즈니스 손실 산정
+- **Customer Support**: 고객 문의 대응 준비
+- **DevOps Team**: 복구 작업 지원 및 모니터링
+
+### **정기 업데이트 스케줄**
+- **5분마다**: 복구 진행 상황 업데이트
+- **복구 완료 시**: 최종 복구 확인 및 사후 분석 계획 공유
+- **24시간 후**: 상세 Post-Mortem 리포트 작성 및 공유
+
+---
+
+**리포트 작성자**: Next-Gen SM Incident Commander  
+**최종 업데이트**: 현재 시각  
+**다음 업데이트 예정**: 5분 후
