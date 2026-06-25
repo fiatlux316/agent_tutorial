@@ -9,32 +9,16 @@ from crewai.utilities.types import LLMMessage
 # .env 파일 로드
 load_dotenv()
 
-class CompanyLLMWrapper(BaseLLM):
+class CompanyLLMWrapper(BaseLLM) :
     """
     회사 내부 생성형 AI 게이트웨이 호출을 위한 Custom CrewAI LLM Wrapper
-    """
+    """    
     api_url: str = Field(default="https://devx-llm-gw-api.shinsegae-inc.com/v1/chat/completions")
     api_key: str = Field(default="sk-YFerB-BGuzWkCcBrFzorjA")
     
     # BaseLLM의 필드 오버라이드
     llm_type: str = "company-llm-gateway"
     model: str = Field(default="bedrock/global.anthropic.claude-sonnet-4-6")
-
-    def __init__(self, **data: Any):
-        # 환경변수 로드를 위해 __init__ 시점의 os.getenv 우선 적용 (BaseModel의 before 검증 통과용)
-        if "model" not in data or not data["model"]:
-            data["model"] = os.getenv("DEVX_MODEL", "bedrock/global.anthropic.claude-sonnet-4-6")
-        if "api_url" not in data or not data["api_url"]:
-            data["api_url"] = os.getenv("DEVX_API_URL", "https://devx-llm-gw-api.shinsegae-inc.com/v1/chat/completions")
-        if "api_key" not in data or not data["api_key"]:
-            data["api_key"] = os.getenv("DEVX_API_KEY", "sk-YFerB-BGuzWkCcBrFzorjA")
-        if "llm_type" not in data or not data["llm_type"]:
-            data["llm_type"] = os.getenv("LLM_TYPE", "company-llm-gateway")
-        if "temperature" not in data or data["temperature"] is None:
-            temp_env = os.getenv("DEVX_TEMPERATURE")
-            data["temperature"] = float(temp_env) if temp_env is not None else 0.0
-            
-        super().__init__(**data)
 
     def call(
         self,
@@ -85,5 +69,11 @@ class CompanyLLMWrapper(BaseLLM):
         except Exception as e:
             raise RuntimeError(f"사내 생성형 AI API 호출 오류: {e}")
 
-# 래퍼 생성
-llm = CompanyLLMWrapper()
+# 래퍼 생성 (.env 환경변수값 기반으로 명시적 초기화)
+llm = CompanyLLMWrapper(
+    model=os.getenv("DEVX_MODEL"),
+    api_url=os.getenv("DEVX_API_URL"),
+    llm_type=os.getenv("LLM_TYPE"),
+    api_key=os.getenv("DEVX_API_KEY"),
+    temperature=float(os.getenv("DEVX_TEMPERATURE"))
+)

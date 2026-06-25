@@ -40,7 +40,7 @@ class MonitoringFlow(Flow[ContentState]):
         print("결과 취합 및 저장")
         output_dir = Path("output")
         output_dir.mkdir(exist_ok=True)
-        with open(output_dir / "chatbot_response_analysis.json", "w") as f:
+        with open(output_dir / "chatbot_response_analysis.md", "w") as f:
             f.write(self.state.final_post)
         print("결과 저장 완료")
 

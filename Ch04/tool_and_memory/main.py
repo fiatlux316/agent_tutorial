@@ -20,6 +20,7 @@ tools = [tool]
 result = tool.invoke("랭그래프에서 '노드'란 무엇인가요?")
 #print(f"\n🔍 도구 응답:\n{result}")
 
+# pyrefly: ignore [missing-import]
 from llm import get_llm
 llm = get_llm()
 

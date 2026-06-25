@@ -53,6 +53,7 @@ llm = ChatBedrock(
     model=os.getenv("BEDROCK_MODEL"),
     region=os.getenv("BEDROCK_REGION"),
     temperature=0.0,
+    # pyrefly: ignore [unexpected-keyword]
     top_p=0.1,
     max_tokens=8000,
     model_kwargs=model_kwargs

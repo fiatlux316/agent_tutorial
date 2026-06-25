@@ -64,42 +64,32 @@ faq_data_annotation_task:
     2) 맥락 이탈: 특정 지점 안내 중 뜬금없이 타 지점 정보가 나오거나 초기 메뉴가 노출되는 경우.
     3) 답변 품질 저하: 정보 제공 없이 "질문을 선택해주세요"만 반복하거나 무관한 webLink가 제공되는 경우.
 
-    출력 및 계산 로직 (JSON)
-    - 반드시 JSON 형식으로 출력하며, 'summary'와 'result' 키를 포함한다.
-    - "summary": {
-        "total_count": 분석한 전체 데이터 행 수,
-        "anomaly_count": 이상(Anomaly)으로 판별된 건수,
-        "accuracy_rate": "((total_count - anomaly_count) / total_count * 100)" 계산 결과 (%)
-      }
-    - "result": {
-        "{id}": {
-            "question": {질문},
-            "answer": {답변},
-            "intent_id": {intent_id},
-            "description": "데이터 불일치", "컨텍스트 오류" 등 전문 용어를 사용한 상세 사유
-        }
-    }
-
     제약사항
     - 'result'에는 이상(Anomaly) 케이스만 포함한다. 정상 케이스는 출력하지 않는다.
-    - 'summary'의 total_count는 정상과 이상 건수를 모두 합친 전체를 기준으로 한다.
+    - 'result' 는 각각의 id 별로  질문/답변/액션/버튼/intent_id/오류설명 등의 정보를 포함한다.
+    - 'summary'의 total_count, normal_count, anomaly_count, accuracy_rate 를 포함한다.
+    - total_count 는 정상과 이상 건수를 모두 합친 전체를 기준으로 한다.
+    - normal_count 정상 건수, anomaly_count 이상 건수, accuracy_rate = normal_count / total_count * 100
     - JSON 외에 어떤 설명이나 인사말도 생략한다.
 
   expected_output: >
     정형화된 JSON 형식 :
-    {
-      "summary": {
+    {{
+      "summary": {{
         "total_count": int,
+        "normal_count": int,
         "anomaly_count": int,
         "accuracy_rate": float
-      },
-      "result": {
-        "{id}": {
-          "question": str,
-          "answer": str,
+      }},
+      "result": {{
+        "id": {{
+          "질문": str,
+          "답변": str,
+          "액션": str,
+          "버튼": str,
           "intent_id": str,
-          "description": str
-        }
-      }
-    }   
+          "오류설명": str
+        }}
+      }}
+    }}   
   agent: faq_data_annotator   
