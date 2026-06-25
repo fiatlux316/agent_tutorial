@@ -19,22 +19,22 @@ import agentops
 agentops.init(tags=['system-monitoring-flow'])
 
 # bedrock api 호출 
-import os
+# import os
 
-from crewai import LLM
-top_k_env = os.getenv("BEDROCK_TOP_K", "5")
-model_kwargs = {}
-model_kwargs["top_k"] = int(top_k_env)
-llm = LLM(
-    model=f"bedrock/{os.getenv('BEDROCK_MODEL')}",
-    region_name=os.getenv('BEDROCK_REGION', 'ap-southeast-2'),
-    temperature=0.0,
-    max_tokens=8000,
-    additional_model_request_fields=model_kwargs
-)
+# from crewai import LLM
+# top_k_env = os.getenv("BEDROCK_TOP_K", "5")
+# model_kwargs = {}
+# model_kwargs["top_k"] = int(top_k_env)
+# llm = LLM(
+#     model=f"bedrock/{os.getenv('BEDROCK_MODEL')}",
+#     region_name=os.getenv('BEDROCK_REGION', 'ap-southeast-2'),
+#     temperature=0.0,
+#     max_tokens=8000,
+#     additional_model_request_fields=model_kwargs
+# )
 
 # devx api 호출
-#from .devx_llm_wrapper import llm
+from ..devx_llm_wrapper import llm
 
 
 @CrewBase

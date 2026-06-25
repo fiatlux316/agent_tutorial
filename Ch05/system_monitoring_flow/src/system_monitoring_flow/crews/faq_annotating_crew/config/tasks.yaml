@@ -1,0 +1,105 @@
+chatbot_data_transform_task:
+  description: >
+    아래 규칙을 따라 CSV 형식으로 원본 데이터 ({input_file})를 가공한다.
+    value 컬럼에 있는 JSON 데이터를 아래 규칙에 맞게 가공해야 한다.
+
+    원본 데이터 포맷:
+    id || inflo_chnl_id || type || reg_dts || value || intent_id
+    - id: 각 ROW 고유 ID
+    - inflo_chnl_id: Session ID로 랜덤 UUID로 되어있음. inflo_chnl_id가 같으면 같은 세션으로 확인함
+    - reg_dts: 메세지가 전송된 시간
+    - value: 챗봇 또는 채팅 메세지로 JSON 형태로 되어 있음
+    - intent_id: 질문 및 답변 분류 ID
+
+    데이터 가공 시 규칙:
+    - value의 type이 GREET__RESPOND_NORMAL인 경우 제외
+    - value의 type이 INTRO_MESG인 경우 제외
+    - reg_dts를 기준으로 질문 - 답변 확인
+    - intent_id: array 형식의 column으로 여러 값이 있는 경우 배열 형식 유지해서 저장 (ex. [1, 2, 3])
+
+    필드 별 데이터 가공 규칙:
+    * REQUEST가 JSON 형식이고 type이 DIALOG_FLOW_EVENT인 경우
+      - 질문타입: DIALOG FLOW EVENT
+      - 질문: "message" 필드 내용 저장
+    * REQUEST가 plain text 형식이면
+      - 질문타입: 직접입력
+      - 질문: plain text 그대로 저장
+    * 답변, 액션, 버튼: RESPONSE JSON을 파싱해서 저장
+      * 답변:
+        1. 최상위 type이 "text"인 경우 "value" 필드의 내용만 저장
+        2. 최상위 type이 "card"인 경우
+        3. 하위 text의 "value" 필드의 내용만 저장
+      * 버튼:
+        1. 최상위 type이 "card"인 경우
+          - 하위 type이 "button"인 경우 "label" 필드의 내용만 저장
+        2. 최상위 type이 "text"인 경우
+          - 하위 type에 "buttons"가 포함되어 있으면 buttons 하위의 각 "label" 필드 값을 comma로 구분하여 저장함
+      * 액션:
+        1. "action" 필드가 있는 경우 "action" 필드의 내용만 저장
+
+    최종 출력 형태:
+    id || 질문 || 답변 || 액션 || 버튼 || intent_id
+    - 각 컬럼 별 구분자는 '||' 사용
+    - 최종 출력 시 가공한 데이터 이외에 문구 또는 메세지는 덧붙이지 말고 데이터만 표기할 것
+
+  expected_output: >
+    정형화된 포맷의 챗봇 대화 데이터 :
+    id || 질문 || 답변 || 액션 || 버튼 || intent_id
+    - 각 컬럼 별 구분자는 '||' 사용
+    - 최종 출력 시 가공한 데이터 이외에 문구 또는 메세지는 덧붙이지 말고 데이터만 표기할 것
+  agent: chatbot_data_collector
+  tools : [load_csv]
+
+faq_data_annotation_task:
+  description: >
+    정제된 챗봇 데이터를 분석하여 품질을 검증하는 전문 QA 데이터 분석가이다. 가공된 CSV 데이터를 바탕으로 서비스
+    설계(Hierarchy)를 벗어난 오류를 적발하고 정답률을 산출한다.
+
+    서비스 맥락 및 분석 대상
+    - 서비스: 이마트 본사 점포 운영 및 고객 안내 챗봇 (지점안내, 영업시간, 주차 등)
+    - 데이터 형식: id || 질문 || 답변 || 액션 || 버튼 || intent_id (구분자 '||')
+
+    이상 탐지 기준 (Anomaly)
+    1) 하이어라키 불일치: 질문/버튼의 카테고리와 무관한 응답이 나간 경우.
+    2) 맥락 이탈: 특정 지점 안내 중 뜬금없이 타 지점 정보가 나오거나 초기 메뉴가 노출되는 경우.
+    3) 답변 품질 저하: 정보 제공 없이 "질문을 선택해주세요"만 반복하거나 무관한 webLink가 제공되는 경우.
+
+    출력 및 계산 로직 (JSON)
+    - 반드시 JSON 형식으로 출력하며, 'summary'와 'result' 키를 포함한다.
+    - "summary": {
+        "total_count": 분석한 전체 데이터 행 수,
+        "anomaly_count": 이상(Anomaly)으로 판별된 건수,
+        "accuracy_rate": "((total_count - anomaly_count) / total_count * 100)" 계산 결과 (%)
+      }
+    - "result": {
+        "{id}": {
+            "question": {질문},
+            "answer": {답변},
+            "intent_id": {intent_id},
+            "description": "데이터 불일치", "컨텍스트 오류" 등 전문 용어를 사용한 상세 사유
+        }
+    }
+
+    제약사항
+    - 'result'에는 이상(Anomaly) 케이스만 포함한다. 정상 케이스는 출력하지 않는다.
+    - 'summary'의 total_count는 정상과 이상 건수를 모두 합친 전체를 기준으로 한다.
+    - JSON 외에 어떤 설명이나 인사말도 생략한다.
+
+  expected_output: >
+    정형화된 JSON 형식 :
+    {
+      "summary": {
+        "total_count": int,
+        "anomaly_count": int,
+        "accuracy_rate": float
+      },
+      "result": {
+        "{id}": {
+          "question": str,
+          "answer": str,
+          "intent_id": str,
+          "description": str
+        }
+      }
+    }   
+  agent: faq_data_annotator   

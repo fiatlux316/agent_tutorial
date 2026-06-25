@@ -37,3 +37,15 @@ def analyze_log_anomalies(service_name: str) -> str:
     """로그 시스템(Elasticsearch/Opensearch 등)에서 특정 서비스의 최근 에러 로그 스택트레이스를 분석합니다."""
     # TODO: Elasticsearch 쿼리 연동 로직 추가
     return f"[Log Analysis] {service_name}에서 'java.sql.SQLTransientConnectionException: Connection is not available' 반복 발생 확인."
+
+@tool
+def load_csv(input_file: str) -> str:    
+    """CSV 파일을 로드하여 데이터프레임을 csv 형태로 반환합니다."""
+    import pandas as pd
+    print(f"\n\n\n\n\n{input_file}\n\n\n\n\n")
+    df = pd.read_csv(input_file)
+    print("\n\n")
+    print("CSV 파일 로드 완료")
+    print(df.head())
+    print(f"\n\n")
+    return df.to_csv(index=False)

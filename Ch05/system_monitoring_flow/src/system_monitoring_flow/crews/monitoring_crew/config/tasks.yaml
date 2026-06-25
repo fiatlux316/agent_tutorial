@@ -35,4 +35,4 @@ incident_report_task:
   expected_output: >
     마크다운 포맷의 체계적인 장애 진단 및 대응 가이드 리포트
     
-  agent: incident_commander
+  agent: incident_commander 
