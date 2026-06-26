@@ -1,0 +1,24 @@
+[project]
+name = "data_annotating_flow"
+version = "0.1.0"
+description = "data_annotating_flow using crewAI"
+authors = [{ name = "Your Name", email = "you@example.com" }]
+requires-python = ">=3.10, <3.14"
+dependencies = [
+    "agentops>=0.4.21",
+    "crewai[bedrock,tools]==1.14.7",
+    "langchain==1.2.15",
+]
+
+[project.scripts]
+kickoff = "data_annotating_flow.main:kickoff"
+run_crew = "data_annotating_flow.main:kickoff"
+plot = "data_annotating_flow.main:plot"
+run_with_trigger = "data_annotating_flow.main:run_with_trigger"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.crewai]
+type = "flow"
