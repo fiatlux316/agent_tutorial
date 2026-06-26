@@ -10,54 +10,39 @@ from langchain.agents import create_agent
 from langgraph.graph import MessagesState
 from langgraph.types import Command
 from IPython.display import Image, display
-from langchain_experimental.utilities import PythonREPL
 
+# pyrefly: ignore [missing-import]
 from llm import get_llm
 llm = get_llm()
 
 # 1) 검색 도구 (Tavily API 필요)
 tavily_tool = TavilySearch(max_results=5)
 
-# 2) 로컬 파이썬 실행 도구 (차트 생성 전용)
-repl = PythonREPL()
+# 2) 로컬 파이썬 실행 도구 (subprocess 사용, PythonREPL 대체)
+def execute_python_code(code: str) -> str:
+    """파이썬 코드를 안전하게 실행하고 결과를 반환합니다."""
+    try:
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode != 0:
+            return f"실행 실패:\n{result.stderr}"
+        return result.stdout if result.stdout else "(출력 없음)"
+    except subprocess.TimeoutExpired:
+        return "실행 시간 초과 (10초)"
+    except Exception as e:
+        return f"실행 중 오류: {repr(e)}"
 
 @tool
 def python_repl_tool(
     code: Annotated[str, "차트를 생성하기 위한 파이썬 코드"]
 ):
     """파이썬 코드를 실행합니다. 출력은 print(...)로 표시해야 합니다."""
-    try:
-        result = repl.run(code)
-    except BaseException as e:
-        return f"실행 실패: {repr(e)}"
+    result = execute_python_code(code)
     return f"성공적으로 실행했습니다:\n```python\n{code}\n```\nStdout: {result}\n\nFINAL ANSWER"
-
-
-# # 2) 로컬 파이썬 실행 도구 (subprocess 사용, PythonREPL 대체)
-# def execute_python_code(code: str) -> str:
-#     """파이썬 코드를 안전하게 실행하고 결과를 반환합니다."""
-#     try:
-#         result = subprocess.run(
-#             [sys.executable, "-c", code],
-#             capture_output=True,
-#             text=True,
-#             timeout=10,
-#         )
-#         if result.returncode != 0:
-#             return f"실행 실패:\n{result.stderr}"
-#         return result.stdout if result.stdout else "(출력 없음)"
-#     except subprocess.TimeoutExpired:
-#         return "실행 시간 초과 (10초)"
-#     except Exception as e:
-#         return f"실행 중 오류: {repr(e)}"
-
-# @tool
-# def python_repl_tool(
-#     code: Annotated[str, "차트를 생성하기 위한 파이썬 코드"]
-# ):
-#     """파이썬 코드를 실행합니다. 출력은 print(...)로 표시해야 합니다."""
-#     result = execute_python_code(code)
-#     return f"성공적으로 실행했습니다:\n```python\n{code}\n```\nStdout: {result}\n\nFINAL ANSWER"
 
 
 # 3) 시스템 프롬프트 템플릿
@@ -85,8 +70,6 @@ research_agent = create_agent(
 def research_node(state: MessagesState) -> Command[Literal["chart_generator", "__end__"]]:
     result = research_agent.invoke(state)
     goto = get_next_node(result["messages"][-1], "chart_generator")
-    print(">>>>>>>>>>>>>research_node - last_message:", result["messages"][-1])  # 디버깅용 출력
-    print(">>>>>>>>>>>>>research_node - goto:", goto)  # 디버깅용 출력
     # 일부 모델/프로바이더 제약 회피: 마지막 메시지를 Human 역할로 래핑
     result["messages"][-1] = HumanMessage(content=result["messages"][-1].content, name="researcher")
     return Command(update={"messages": result["messages"]}, goto=goto)

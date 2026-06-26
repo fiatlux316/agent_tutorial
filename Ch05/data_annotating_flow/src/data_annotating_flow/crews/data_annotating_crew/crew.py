@@ -61,7 +61,7 @@ class DataAnnotatingCrew:
 
     @crew
     def crew(self) -> Crew:
-        """Creates the FAQ Annotating Crew"""
+        """Creates the FAQ Data Annotating Crew"""
         return Crew(
             agents=self.agents,
             tasks=self.tasks,
